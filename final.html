@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Placement des invités</title>
+    <style>
+      body {
+        display: flex;
+        font-family: Arial, sans-serif;
+      }
+      #controls {
+        width: 250px;
+        padding: 10px;
+        background: #f4f4f4;
+      }
+      #guests {
+        margin-top: 10px;
+        min-height: 150px;
+        background: #fff;
+        padding: 5px;
+        border: 1px solid #ccc;
+      }
+      .guest {
+        padding: 5px;
+        margin: 5px;
+        background: #ddd;
+        cursor: grab;
+        text-align: center;
+        border-radius: 5px;
+        user-select: none;
+      }
+      #room {
+        flex: 1;
+        position: relative;
+        height: 100vh;
+        background: #eaeaea;
+      }
+      .table {
+        width: 120px;
+        height: 120px;
+        background: #ffcc00;
+        border-radius: 50%;
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: move;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <h3>Importer un fichier CSV</h3>
+      <input type="file" id="csvFileInput" accept=".csv" />
+      <div id="errorMessage"></div>
+      <h3>Liste des invités</h3>
+      <div id="guests" ondragover="event.preventDefault()" ondrop="dropGuest(event, this)"></div>
+    </div>
+    <div id="room"></div>
+    <script>
+      let draggedGuest = null;
+      document.getElementById('csvFileInput').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          processCSV(e.target.result);
+        };
+        reader.readAsText(file);
+      });
+      
+      function processCSV(csvText) {
+        const separator = csvText.includes(';') ? ';' : ',';
+        const rows = csvText.trim().split('\n').map((row) => row.split(separator));
+        const guestList = document.getElementById('guests');
+        guestList.innerHTML = '';
+        for (let i = 1; i < rows.length; i++) {
+          let guestName = rows[i][0].trim();
+          if (guestName) {
+            let guestDiv = document.createElement('div');
+            guestDiv.classList.add('guest');
+            guestDiv.textContent = guestName;
+            guestDiv.draggable = true;
+            guestDiv.ondragstart = (e) => {
+              draggedGuest = guestDiv;
+              setTimeout(() => (guestDiv.style.display = 'none'), 0);
+            };
+            guestDiv.ondragend = () => {
+              draggedGuest.style.display = 'block';
+              draggedGuest = null;
+            };
+            guestList.appendChild(guestDiv);
+          }
+        }
+      }
+      
+      function dropGuest(event, target) {
+        event.preventDefault();
+        if (draggedGuest) {
+          target.appendChild(draggedGuest);
+          draggedGuest.style.position = 'relative';
+          draggedGuest.style.top = '0px';
+          draggedGuest.style.left = '0px';
+        }
+      }
+    </script>
+  </body>
+</html>

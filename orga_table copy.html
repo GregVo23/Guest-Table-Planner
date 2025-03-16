@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Import CSV - Liste des invités</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        padding: 20px;
+      }
+      input[type='file'] {
+        margin-bottom: 10px;
+      }
+      #errorMessage {
+        color: red;
+        font-weight: bold;
+      }
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+      li {
+        padding: 5px;
+        border-bottom: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Importer un fichier CSV</h2>
+    <input type="file" id="csvFileInput" accept=".csv" />
+    <div id="errorMessage"></div>
+    <div id="output"></div>
+
+    <script>
+      document.getElementById('csvFileInput').addEventListener('change', function (event) {
+        const file = event.target.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = function (e) {
+          const text = e.target.result
+          processCSV(text)
+        }
+        reader.readAsText(file)
+      })
+
+      function processCSV(csvText) {
+        const separator = csvText.includes(';') ? ';' : ',' // Détecte le bon séparateur
+        const rows = csvText
+          .trim()
+          .split('\n')
+          .map((row) => row.split(separator))
+
+        if (rows.length < 2) {
+          document.getElementById('errorMessage').textContent =
+            "Le fichier CSV est vide ou n'a pas assez de données."
+          return
+        }
+
+        // Extraction des en-têtes avec nettoyage
+        const headers = rows[0].map((h) => h.trim().toLowerCase().replace(/\s/g, ''))
+
+        // Index de la colonne user.phone
+        const phoneIndex = headers.findIndex((h) => h.includes('user.phone'))
+
+        if (phoneIndex === -1) {
+          document.getElementById('errorMessage').textContent =
+            "Aucune colonne 'user.phone' détectée."
+          return
+        }
+
+        // Recherche des colonnes prénom/nom (sauf user.given_name et user.family_name)
+        const guestColumns = []
+        for (let i = 1; i <= 5; i++) {
+          const givenNameKey = `data.given_name_${i}_guest`
+          const familyNameKey = `data.family_name_${i}_guest`
+          const foodRestrictionKey = `data.guest_${i}_not_eating_everything`
+
+          const givenIndex = headers.findIndex((h) => h.includes(givenNameKey.toLowerCase()))
+          const familyIndex = headers.findIndex((h) => h.includes(familyNameKey.toLowerCase()))
+          const foodIndex = headers.findIndex((h) => h.includes(foodRestrictionKey.toLowerCase()))
+
+          if (givenIndex !== -1 && familyIndex !== -1) {
+            guestColumns.push({ givenIndex, familyIndex, foodIndex })
+          }
+        }
+
+        if (guestColumns.length === 0) {
+          document.getElementById('errorMessage').textContent =
+            'Aucune colonne prénom/nom détectée.'
+          return
+        }
+
+        let uniqueGuests = new Set() // Utilisation d'un Set pour éviter les doublons
+
+        // Lire les données et extraire prénoms + noms
+        for (let i = 1; i < rows.length; i++) {
+          const phoneNumber = rows[i][phoneIndex]?.trim()
+
+          if (phoneNumber) {
+            // Ne traiter que les lignes avec un numéro de téléphone
+            guestColumns.forEach((indexes) => {
+              const givenName = rows[i][indexes.givenIndex]?.trim() || ''
+              const familyName = rows[i][indexes.familyIndex]?.trim() || ''
+              const foodRestriction =
+                indexes.foodIndex !== -1 ? rows[i][indexes.foodIndex]?.trim() : ''
+
+              if (givenName && familyName && givenName !== '1' && familyName !== '1') {
+                let guestEntry = `${givenName} ${familyName}`
+                if (foodRestriction && foodRestriction !== '1') {
+                  guestEntry += ` (Ne mange pas : ${foodRestriction})`
+                }
+                uniqueGuests.add(guestEntry)
+              }
+            })
+          }
+        }
+
+        if (uniqueGuests.size === 0) {
+          document.getElementById('errorMessage').textContent = 'Aucun invité valide trouvé.'
+          document.getElementById('output').innerHTML = ''
+          return
+        }
+
+        let output = '<h3>Invités détectés :</h3><ul>'
+        uniqueGuests.forEach((guest) => {
+          output += `<li>${guest}</li>`
+        })
+        output += '</ul>'
+
+        document.getElementById('output').innerHTML = output
+        document.getElementById('errorMessage').textContent = ''
+      }
+    </script>
+  </body>
+</html>

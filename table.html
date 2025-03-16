@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Placement des invités</title>
+    <style>
+      body {
+        display: flex;
+        font-family: Arial, sans-serif;
+      }
+      #controls {
+        width: 200px;
+        padding: 10px;
+        background: #f4f4f4;
+      }
+      #guests {
+        margin-top: 10px;
+      }
+      .guest {
+        padding: 5px;
+        margin: 5px;
+        background: #ddd;
+        cursor: grab;
+        text-align: center;
+        border-radius: 5px;
+      }
+      #room {
+        flex: 1;
+        position: relative;
+        height: 100vh;
+        background: #eaeaea;
+      }
+      .table {
+        width: 120px;
+        height: 120px;
+        background: #ffcc00;
+        border-radius: 50%;
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: move;
+        user-select: none;
+      }
+      .seat {
+        width: 40px;
+        height: 40px;
+        background: #fff;
+        border-radius: 50%;
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <h3>Nombre de tables</h3>
+      <input type="number" id="tableCount" min="1" max="10" value="1" />
+      <button onclick="generateTables()">Créer</button>
+      <div id="guests">
+        <h3>Invités</h3>
+        <div class="guest" draggable="true">Alice</div>
+        <div class="guest" draggable="true">Bob</div>
+        <div class="guest" draggable="true">Charlie</div>
+        <div class="guest" draggable="true">David</div>
+        <div class="guest" draggable="true">Emma</div>
+        <div class="guest" draggable="true">Frank</div>
+        <div class="guest" draggable="true">Grace</div>
+        <div class="guest" draggable="true">Hugo</div>
+      </div>
+    </div>
+    <div id="room"></div>
+    <script>
+      let room = document.getElementById('room')
+      let guests = document.querySelectorAll('.guest')
+      let draggedGuest = null
+
+      function createTable(x, y) {
+        let table = document.createElement('div')
+        table.classList.add('table')
+        table.style.left = `${x}px`
+        table.style.top = `${y}px`
+        table.style.position = 'absolute'
+
+        room.appendChild(table)
+        dragElement(table)
+
+        let radius = 70 // Rayon du cercle des sièges
+        for (let i = 0; i < 8; i++) {
+          let angle = (i * 2 * Math.PI) / 8
+          let seatX = x + radius * Math.cos(angle) + 40
+          let seatY = y + radius * Math.sin(angle) + 40
+
+          let seat = document.createElement('div')
+          seat.classList.add('seat')
+          seat.style.left = `${seatX}px`
+          seat.style.top = `${seatY}px`
+          seat.ondragover = (e) => e.preventDefault()
+          seat.ondrop = (e) => {
+            if (draggedGuest && !seat.hasChildNodes()) {
+              seat.appendChild(draggedGuest)
+              draggedGuest.style.position = 'relative'
+              draggedGuest.style.top = '0px'
+              draggedGuest.style.left = '0px'
+            }
+          }
+
+          room.appendChild(seat)
+        }
+      }
+
+      function dragElement(el) {
+        let posX = 0,
+          posY = 0,
+          lastX = 0,
+          lastY = 0
+        el.onmousedown = function (e) {
+          e.preventDefault()
+          lastX = e.clientX
+          lastY = e.clientY
+          document.onmousemove = move
+          document.onmouseup = () => (document.onmousemove = null)
+        }
+        function move(e) {
+          posX = lastX - e.clientX
+          posY = lastY - e.clientY
+          lastX = e.clientX
+          lastY = e.clientY
+          el.style.top = el.offsetTop - posY + 'px'
+          el.style.left = el.offsetLeft - posX + 'px'
+        }
+      }
+
+      function generateTables() {
+        room.innerHTML = ''
+        let tableCount = parseInt(document.getElementById('tableCount').value)
+        let startX = 100
+        let startY = 100
+        let spacing = 200
+
+        for (let i = 0; i < tableCount; i++) {
+          let x = startX + (i % 5) * spacing
+          let y = startY + Math.floor(i / 5) * spacing
+          createTable(x, y)
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        guests.forEach((guest) => {
+          guest.ondragstart = () => (draggedGuest = guest)
+          guest.ondragend = () => (draggedGuest = null)
+        })
+      })
+    </script>
+  </body>
+</html>

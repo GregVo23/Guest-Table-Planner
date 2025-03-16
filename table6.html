@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Placement des invités</title>
+    <style>
+      body {
+        display: flex;
+        font-family: Arial, sans-serif;
+      }
+      #controls {
+        width: 200px;
+        padding: 10px;
+        background: #f4f4f4;
+      }
+      #guests {
+        margin-top: 10px;
+        min-height: 150px;
+        background: #fff;
+        padding: 5px;
+        border: 1px solid #ccc;
+      }
+      .guest {
+        padding: 5px;
+        margin: 5px;
+        background: #ddd;
+        cursor: grab;
+        text-align: center;
+        border-radius: 5px;
+        user-select: none;
+      }
+      #room {
+        flex: 1;
+        position: relative;
+        height: 100vh;
+        background: #eaeaea;
+      }
+      .table {
+        width: 120px;
+        height: 120px;
+        background: #ffcc00;
+        border-radius: 50%;
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: move;
+        user-select: none;
+      }
+      .seat {
+        width: 40px;
+        height: 40px;
+        background: #fff;
+        border-radius: 50%;
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <h3>Nombre de tables</h3>
+      <input type="number" id="tableCount" min="1" max="10" value="1" />
+      <button onclick="generateTables()">Créer</button>
+      <div id="guests" ondragover="event.preventDefault()" ondrop="dropGuest(event, this)">
+        <h3>Invités</h3>
+        <div class="guest" draggable="true">Alice</div>
+        <div class="guest" draggable="true">Bob</div>
+        <div class="guest" draggable="true">Charlie</div>
+        <div class="guest" draggable="true">David</div>
+        <div class="guest" draggable="true">Emma</div>
+        <div class="guest" draggable="true">Frank</div>
+        <div class="guest" draggable="true">Grace</div>
+        <div class="guest" draggable="true">Hugo</div>
+      </div>
+    </div>
+    <div id="room"></div>
+    <script>
+      let room = document.getElementById("room");
+      let draggedGuest = null;
+
+      function createTable(x, y) {
+        let table = document.createElement("div");
+        table.classList.add("table");
+        table.style.left = `${x}px`;
+        table.style.top = `${y}px`;
+        table.style.position = "absolute";
+
+        room.appendChild(table);
+        dragElement(table);
+
+        let radius = 50;
+        for (let i = 0; i < 8; i++) {
+          let angle = (i * 2 * Math.PI) / 8;
+          let seatX = radius * Math.cos(angle) + 40;
+          let seatY = radius * Math.sin(angle) + 40;
+
+          let seat = document.createElement("div");
+          seat.classList.add("seat");
+          seat.style.left = `${seatX}px`;
+          seat.style.top = `${seatY}px`;
+
+          seat.ondragover = (e) => e.preventDefault();
+          seat.ondrop = (e) => dropGuest(e, seat);
+
+          table.appendChild(seat); // Ajout des sièges à la table (et non à la pièce)
+        }
+      }
+
+      function dragElement(el) {
+        let posX = 0,
+          posY = 0,
+          lastX = 0,
+          lastY = 0;
+        el.onmousedown = function (e) {
+          if (e.target.classList.contains("guest")) return; // Évite de déplacer la table si un invité est cliqué
+          e.preventDefault();
+          lastX = e.clientX;
+          lastY = e.clientY;
+          document.onmousemove = move;
+          document.onmouseup = () => (document.onmousemove = null);
+        };
+        function move(e) {
+          posX = lastX - e.clientX;
+          posY = lastY - e.clientY;
+          lastX = e.clientX;
+          lastY = e.clientY;
+
+          // Déplacement de la table
+          el.style.top = el.offsetTop - posY + "px";
+          el.style.left = el.offsetLeft - posX + "px";
+        }
+      }
+
+      function generateTables() {
+        let existingTables = document.querySelectorAll(".table").length;
+        let newTableCount = parseInt(document.getElementById("tableCount").value);
+        let tablesToAdd = newTableCount - existingTables;
+        
+        if (tablesToAdd <= 0) return; // Évite de supprimer les tables existantes
+
+        let startX = 100;
+        let startY = 100;
+        let spacing = 200;
+
+        for (let i = existingTables; i < newTableCount; i++) {
+          let x = startX + (i % 5) * spacing;
+          let y = startY + Math.floor(i / 5) * spacing;
+          createTable(x, y);
+        }
+      }
+
+      function dropGuest(event, target) {
+        event.preventDefault();
+        if (draggedGuest) {
+          if (target.classList.contains("seat")) {
+            if (target.firstChild) {
+              document.getElementById("guests").appendChild(target.firstChild); // Récupère l'ancien invité
+            }
+            target.appendChild(draggedGuest);
+          } else if (target.id === "guests") {
+            target.appendChild(draggedGuest); // Retour à la liste des invités
+          }
+          draggedGuest.style.position = "relative";
+          draggedGuest.style.top = "0px";
+          draggedGuest.style.left = "0px";
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".guest").forEach((guest) => {
+          guest.ondragstart = (e) => {
+            draggedGuest = guest;
+            setTimeout(() => (guest.style.display = "none"), 0);
+          };
+          guest.ondragend = () => {
+            draggedGuest.style.display = "block";
+            draggedGuest = null;
+          };
+        });
+      });
+    </script>
+  </body>
+</html>

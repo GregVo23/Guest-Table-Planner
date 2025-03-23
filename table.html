@@ -1,160 +1,312 @@
 <!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Placement des invités</title>
-    <style>
-      body {
-        display: flex;
-        font-family: Arial, sans-serif;
-      }
-      #controls {
-        width: 200px;
-        padding: 10px;
-        background: #f4f4f4;
-      }
-      #guests {
-        margin-top: 10px;
-      }
-      .guest {
-        padding: 5px;
-        margin: 5px;
-        background: #ddd;
-        cursor: grab;
-        text-align: center;
-        border-radius: 5px;
-      }
-      #room {
-        flex: 1;
-        position: relative;
-        height: 100vh;
-        background: #eaeaea;
-      }
-      .table {
-        width: 120px;
-        height: 120px;
-        background: #ffcc00;
-        border-radius: 50%;
-        position: absolute;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: move;
-        user-select: none;
-      }
-      .seat {
-        width: 40px;
-        height: 40px;
-        background: #fff;
-        border-radius: 50%;
-        position: absolute;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="controls">
-      <h3>Nombre de tables</h3>
-      <input type="number" id="tableCount" min="1" max="10" value="1" />
-      <button onclick="generateTables()">Créer</button>
-      <div id="guests">
-        <h3>Invités</h3>
-        <div class="guest" draggable="true">Alice</div>
-        <div class="guest" draggable="true">Bob</div>
-        <div class="guest" draggable="true">Charlie</div>
-        <div class="guest" draggable="true">David</div>
-        <div class="guest" draggable="true">Emma</div>
-        <div class="guest" draggable="true">Frank</div>
-        <div class="guest" draggable="true">Grace</div>
-        <div class="guest" draggable="true">Hugo</div>
-      </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Placement des invités</title>
+  <style>
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+    }
+    #controls {
+      width: 200px;
+      padding: 10px;
+      background: #f4f4f4;
+    }
+    #guests {
+      margin-top: 10px;
+      min-height: 150px;
+      background: #fff;
+      padding: 5px;
+      border: 1px solid #ffc7c7;
+    }
+    .guest {
+      padding: 5px;
+      margin: 5px;
+      background: #ffc7c7;
+      cursor: grab;
+      text-align: center;
+      border-radius: 5px;
+      user-select: none;
+    }
+    #room {
+      flex: 1;
+      position: relative;
+      height: 100vh;
+      background: #eaeaea;
+    }
+    .table {
+      width: 160px;
+      height: 160px;
+      background: #6cd3ea;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      user-select: none;
+    }
+    .seat {
+      width: 40px;
+      height: 40px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <h3>Nombre de tables</h3>
+    <input type="number" id="tableCount" min="1" max="20" value="1">
+    <button onclick="generateTables()">Créer</button>
+    <h3>Invités</h3>
+    <h3>Liste (<span id="guestCount">0</span>)</h3>
+
+    <div>
+      <input type="file" id="csvFileInput" accept=".csv">
     </div>
-    <div id="room"></div>
-    <script>
-      let room = document.getElementById('room')
-      let guests = document.querySelectorAll('.guest')
-      let draggedGuest = null
+    <div>
+      <button onclick="saveConfiguration()">Sauvegarder</button>
+      <input type="file" id="loadConfig" accept=".json"></div>
+    <div id="guests" ondragover="event.preventDefault()" ondrop="dropGuest(event, this)">
+      <h3>Liste</h3>
+    </div>
+  </div>
+  <div id="room"></div>
 
-      function createTable(x, y) {
-        let table = document.createElement('div')
-        table.classList.add('table')
-        table.style.left = `${x}px`
-        table.style.top = `${y}px`
-        table.style.position = 'absolute'
+  <script>
+    let draggedGuest = null;
+    let offsetX = 0, offsetY = 0;
 
-        room.appendChild(table)
-        dragElement(table)
+    document.getElementById('csvFileInput').addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        processCSV(e.target.result);
+      };
+      reader.readAsText(file);
+    });
 
-        let radius = 70 // Rayon du cercle des sièges
-        for (let i = 0; i < 8; i++) {
-          let angle = (i * 2 * Math.PI) / 8
-          let seatX = x + radius * Math.cos(angle) + 40
-          let seatY = y + radius * Math.sin(angle) + 40
+    function updateGuestCount() {
+      let count = document.querySelectorAll("#guests .guest").length;
+      document.getElementById("guestCount").textContent = count;
+    }
 
-          let seat = document.createElement('div')
-          seat.classList.add('seat')
-          seat.style.left = `${seatX}px`
-          seat.style.top = `${seatY}px`
-          seat.ondragover = (e) => e.preventDefault()
-          seat.ondrop = (e) => {
-            if (draggedGuest && !seat.hasChildNodes()) {
-              seat.appendChild(draggedGuest)
-              draggedGuest.style.position = 'relative'
-              draggedGuest.style.top = '0px'
-              draggedGuest.style.left = '0px'
-            }
-          }
 
-          room.appendChild(seat)
-        }
+    function processCSV(csvText) {
+  const separator = csvText.includes(';') ? ';' : ',';
+  const rows = csvText.trim().split('\n').map(row => row.split(separator));
+  const guestsContainer = document.getElementById("guests");
+  guestsContainer.innerHTML = "<h3>Liste (<span id='guestCount'>0</span>)</h3>";
+
+  rows.slice(1).forEach(row => {
+    if (row.length >= 2) {
+      const givenName = String(row[34]).replaceAll('"', '');
+      const familyName = String(row[47]).replaceAll('"', '');
+      if (givenName && familyName) {
+        let guestDiv = document.createElement("div");
+        guestDiv.classList.add("guest");
+        guestDiv.textContent = `${givenName} ${familyName}`;
+        guestDiv.draggable = true;
+        guestDiv.ondragstart = (e) => {
+          draggedGuest = guestDiv;
+          e.stopPropagation();
+        };
+        guestDiv.ondragend = () => {
+          draggedGuest = null;
+        };
+        guestsContainer.appendChild(guestDiv);
       }
+    }
+  });
 
-      function dragElement(el) {
-        let posX = 0,
-          posY = 0,
-          lastX = 0,
-          lastY = 0
-        el.onmousedown = function (e) {
-          e.preventDefault()
-          lastX = e.clientX
-          lastY = e.clientY
-          document.onmousemove = move
-          document.onmouseup = () => (document.onmousemove = null)
-        }
-        function move(e) {
-          posX = lastX - e.clientX
-          posY = lastY - e.clientY
-          lastX = e.clientX
-          lastY = e.clientY
-          el.style.top = el.offsetTop - posY + 'px'
-          el.style.left = el.offsetLeft - posX + 'px'
-        }
+  updateGuestCount(); // Met à jour le compteur après le chargement
+}
+
+
+function dropGuest(event, target) {
+  event.preventDefault();
+  if (!draggedGuest) return;
+
+  if (target.classList.contains("seat")) {
+    if (!target.hasChildNodes()) {
+      target.appendChild(draggedGuest);
+      updateGuestCount(); // Mettre à jour le compteur après déplacement
+    }
+  } else if (target.id === "guests") {
+    target.appendChild(draggedGuest);
+    updateGuestCount(); // Mettre à jour le compteur après retour dans la liste
+  }
+}
+
+
+    function generateTables() {
+      let existingTables = document.querySelectorAll(".table").length;
+      let newTableCount = parseInt(document.getElementById("tableCount").value);
+      let tablesToAdd = newTableCount - existingTables;
+      if (tablesToAdd <= 0) return;
+
+      for (let i = existingTables; i < newTableCount; i++) {
+        createTable(100 + i * 210, 160);
       }
+    }
 
-      function generateTables() {
-        room.innerHTML = ''
-        let tableCount = parseInt(document.getElementById('tableCount').value)
-        let startX = 100
-        let startY = 100
-        let spacing = 200
+    function createTable(x, y) {
+  let table = document.createElement("div");
+  table.classList.add("table");
+  table.style.left = `${x}px`;
+  table.style.top = `${y}px`;
+  table.draggable = false;
 
-        for (let i = 0; i < tableCount; i++) {
-          let x = startX + (i % 5) * spacing
-          let y = startY + Math.floor(i / 5) * spacing
-          createTable(x, y)
-        }
+  table.onmousedown = function (e) {
+    if (e.target.classList.contains("guest")) return;
+    let draggedTable = table;
+    offsetX = e.clientX - table.offsetLeft;
+    offsetY = e.clientY - table.offsetTop;
+    document.onmousemove = function (e) {
+      if (!draggedTable) return;
+      draggedTable.style.left = `${e.clientX - offsetX}px`;
+      draggedTable.style.top = `${e.clientY - offsetY}px`;
+    };
+    document.onmouseup = function () {
+      draggedTable = null;
+      document.onmousemove = null;
+    };
+  };
+
+  document.getElementById("room").appendChild(table);
+
+  // Ajouter les sièges
+  for (let i = 0; i < 8; i++) {
+    let seat = document.createElement("div");
+    seat.classList.add("seat");
+    let angle = (i * 2 * Math.PI) / 8;
+    seat.style.left = `${60 + 75 * Math.cos(angle)}px`;
+    seat.style.top = `${60 + 75 * Math.sin(angle)}px`;
+    seat.ondragover = (e) => e.preventDefault();
+    seat.ondrop = (e) => dropGuest(e, seat);
+    table.appendChild(seat);
+  }
+
+  return table; // On retourne la table créée
+}
+</script>
+  <script>
+function saveConfiguration() {
+  let tables = document.querySelectorAll(".table");
+  let guests = document.querySelectorAll("#guests .guest");
+
+  let data = {
+    tables: [],
+    guests: [],
+    guestCount: guests.length // Sauvegarde le nombre d'invités restants
+  };
+
+  // Sauvegarde des tables et de leurs sièges
+  tables.forEach((table, tableIndex) => {
+    let tableData = {
+      id: tableIndex,
+      x: table.style.left,
+      y: table.style.top,
+      seats: []
+    };
+    table.querySelectorAll(".seat").forEach((seat, seatIndex) => {
+      if (seat.firstChild) {
+        tableData.seats.push({
+          seatIndex: seatIndex,
+          guest: seat.firstChild.textContent
+        });
       }
+    });
+    data.tables.push(tableData);
+  });
 
-      document.addEventListener('DOMContentLoaded', function () {
-        guests.forEach((guest) => {
-          guest.ondragstart = () => (draggedGuest = guest)
-          guest.ondragend = () => (draggedGuest = null)
-        })
-      })
-    </script>
-  </body>
+  // Sauvegarde des invités non placés
+  guests.forEach(guest => {
+    data.guests.push(guest.textContent);
+  });
+
+  // Convertir en JSON et télécharger
+  let jsonData = JSON.stringify(data, null, 2);
+  let blob = new Blob([jsonData], { type: "application/json" });
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "configuration.json";
+  link.click();
+}
+
+  
+    document.getElementById('loadConfig').addEventListener('change', function (event) {
+      let file = event.target.files[0];
+      if (!file) return;
+      
+      let reader = new FileReader();
+      reader.onload = function (e) {
+        let data = JSON.parse(e.target.result);
+        loadConfiguration(data);
+      };
+      reader.readAsText(file);
+    });
+  
+    function loadConfiguration(data) {
+  // Nettoyer la salle
+  document.getElementById("room").innerHTML = "";
+
+  // Charger les tables
+  data.tables.forEach(tableData => {
+    let table = createTable(parseInt(tableData.x), parseInt(tableData.y));
+
+    if (table) {
+      tableData.seats.forEach(seatData => {
+        let seat = table.querySelectorAll(".seat")[seatData.seatIndex];
+        if (seat) {
+          let guestDiv = document.createElement("div");
+          guestDiv.classList.add("guest");
+          guestDiv.textContent = seatData.guest;
+          guestDiv.draggable = true;
+          guestDiv.ondragstart = (e) => {
+            draggedGuest = guestDiv;
+            e.stopPropagation();
+          };
+          guestDiv.ondragend = () => {
+            draggedGuest = null;
+          };
+          seat.appendChild(guestDiv);
+        }
+      });
+    }
+  });
+
+  // Charger les invités non assignés
+  let guestsContainer = document.getElementById("guests");
+  guestsContainer.innerHTML = "<h3>Liste (<span id='guestCount'>0</span>)</h3>";
+  data.guests.forEach(guestName => {
+    let guestDiv = document.createElement("div");
+    guestDiv.classList.add("guest");
+    guestDiv.textContent = guestName;
+    guestDiv.draggable = true;
+    guestDiv.ondragstart = (e) => {
+      draggedGuest = guestDiv;
+      e.stopPropagation();
+    };
+    guestDiv.ondragend = () => {
+      draggedGuest = null;
+    };
+    guestsContainer.appendChild(guestDiv);
+  });
+
+  // Mise à jour du compteur des invités
+  document.getElementById("guestCount").textContent = data.guestCount;
+}
+
+</script>
+</body>
 </html>

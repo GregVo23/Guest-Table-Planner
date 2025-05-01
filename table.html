@@ -89,6 +89,9 @@
     <div>
       <button onclick="saveConfiguration()">Sauvegarder</button>
       <input type="file" id="loadConfig" accept=".json"></div>
+      <div>
+        <button onclick="resetConfiguration()">Réinitialiser</button>
+      </div>
     <div id="guests" ondragover="event.preventDefault()" ondrop="dropGuest(event, this)">
       <h3>Liste</h3>
     </div>
@@ -327,6 +330,9 @@ function saveConfiguration() {
   y: table.style.top,
   type: table.classList.contains("rect") ? "rect" : "round",
   seats: []
+
+
+
 };
 
     table.querySelectorAll(".seat").forEach((seat, seatIndex) => {
@@ -352,6 +358,8 @@ function saveConfiguration() {
   link.href = URL.createObjectURL(blob);
   link.download = "configuration.json";
   link.click();
+
+  localStorage.setItem("guestConfiguration", jsonData)
 }
 
   
@@ -424,6 +432,34 @@ function saveConfiguration() {
   document.getElementById("guestCount").textContent = data.guestCount;
 }
 
+
+</script>
+<script>
+  window.addEventListener("load", () => {
+    const savedConfig = localStorage.getItem("guestConfiguration");
+    if (savedConfig) {
+      try {
+        const data = JSON.parse(savedConfig);
+        loadConfiguration(data);
+      } catch (e) {
+        console.error("Erreur de chargement de la configuration sauvegardée :", e);
+      }
+    }
+  });
+
+  function resetConfiguration() {
+  // Vider les éléments HTML
+  document.getElementById("room").innerHTML = "";
+  document.getElementById("guests").innerHTML = "<h3>Liste</h3>";
+  document.getElementById("guestCount").textContent = "0";
+
+  // Supprimer du localStorage
+  localStorage.removeItem("guestConfiguration");
+
+  // Optionnel : réinitialiser les champs input
+  document.getElementById("rectTableCount").value = 1;
+  document.getElementById("tableCount").value = 1;
+}
 
 </script>
 </body>

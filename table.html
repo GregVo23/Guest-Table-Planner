@@ -61,41 +61,122 @@
       justify-content: center;
       font-size: 12px;
     }
+
+    button {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+/* Styles spécifiques par fonction */
+button[onclick*="generateRectTables"] {
+  background-color: #5cb85c;
+}
+button[onclick*="generateTables"] {
+  background-color: #0275d8;
+}
+button[onclick*="saveConfiguration"] {
+  background-color: #f0ad4e;
+}
+button[onclick*="resetConfiguration"] {
+  background-color: #d9534f;
+}
+input[type="file"] {
+  margin-top: 5px;
+  width: 100%;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+input[type="file"] {
+  display: block;
+  width: 90%;
+  padding: 8px 10px;
+  margin: 10px 0;
+  font-size: 14px;
+  background-color: #fff;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.3s, background-color 0.3s;
+}
+
+input[type="file"]:hover {
+  border-color: #999;
+  background-color: #f9f9f9;
+}
+
+.file-label {
+  display: block;
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  text-align: center;
+  background-color: #5bc0de;
+  color: white;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.file-label:hover {
+  background-color: #31b0d5;
+}
+
   </style>
 </head>
 <body>
   <div id="controls">
     <h3>Nombre de tables</h3>
-
-<p>
-    <label for="rectTableCount">Table rectangulaire:</label>
-    <br><input type="number" id="rectTableCount" min="1" max="20" value="1">
-    <button onclick="generateRectTables()">Créer</button>
-
-</p>
-
-<p>
-    <label for="tableCount">Table ronde:</label>
-    <br><input type="number" id="tableCount" min="1" max="20" value="1">
-    <button onclick="generateTables()">Créer</button>
-  </p>
-
+  
+    <p>
+      <label for="rectTableCount">Table rectangulaire:</label><br>
+      <input type="number" id="rectTableCount" min="1" max="20" value="1">
+      <button onclick="generateRectTables()">Ajouter tables</button>
+    </p>
+  
+    <p>
+      <label for="tableCount">Table ronde:</label><br>
+      <input type="number" id="tableCount" min="1" max="20" value="1">
+      <button onclick="generateTables()">Ajouter tables</button>
+    </p>
+  
     <h3>Invités</h3>
-    <h3>Nombre :<span id="guestCount">0</span></h3>
-
+    <h3>Nombre : <span id="guestCount">0</span></h3>
+  
+    <!-- Input CSV -->
     <div>
-      <input type="file" id="csvFileInput" accept=".csv">
+      <label for="csvFileInput" class="file-label">Importer invités (.csv)</label>
+      <input type="file" id="csvFileInput" accept=".csv" hidden style="display: none;">
     </div>
+  
+    <!-- Input JSON -->
     <div>
-      <button onclick="saveConfiguration()">Sauvegarder</button>
-      <input type="file" id="loadConfig" accept=".json"></div>
-      <div>
-        <button onclick="resetConfiguration()">Réinitialiser</button>
-      </div>
+      <label for="loadConfig" class="file-label">Charger configuration (.json)</label>
+      <input type="file" id="loadConfig" accept=".json" hidden style="display: none;">
+    </div>
+  
+    <!-- Boutons -->
+    <div>
+      <button onclick="saveConfiguration()">💾 Sauvegarder la disposition</button>
+      <button onclick="resetConfiguration()">🔄 Réinitialiser la salle</button>
+    </div>
+  
+    <!-- Zone invités -->
     <div id="guests" ondragover="event.preventDefault()" ondrop="dropGuest(event, this)">
       <h3>Liste</h3>
     </div>
   </div>
+  
   <div id="room"></div>
 
   <script>

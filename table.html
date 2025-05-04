@@ -5,24 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Placement des invités</title>
   <style>
-    body {
-      display: flex;
+body {
+  display: flex;
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
       font-family: Arial, sans-serif;
       background: #eaeaea;
-    }
+}
+
+.main-content {
+  flex: 1;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.right-sidebar {
+  width: 250px;
+  background-color: #f4f4f4;
+  padding: 1rem;
+  overflow-y: auto;
+  border-left: 1px solid #ccc;
+}
+
+.guest-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.guest-list li {
+  margin-bottom: 0.5rem;
+}
+
+
+
     #controls {
       width: 200px;
       padding: 10px;
       background: #f4f4f4;
     }
     #guests {
-      margin-top: 10px;
-      min-height: 150px;
-      background: #fff;
-      padding: 5px;
-      border: 1px solid #ffc7c7;
-      border-radius: 10px;
-    }
+  flex: 1;
+  overflow-y: auto;
+  background: #fff;
+  padding: 5px;
+  border: 1px solid #ffc7c7;
+  border-radius: 10px;
+}
+
+
+    
+
+    /**Adaptation**/
+    
+    #controls {
+  height: 100vh; /* Hauteur fixe pour ne pas grandir au-delà de la fenêtre */
+  display: flex;
+  flex-direction: column;
+}
+
+#guests {
+  flex: 1; /* prend tout l'espace restant */
+  overflow-y: auto;
+}
+
+    /**End**/
+
     .guest {
       padding: 5px;
       margin: 5px;
@@ -118,7 +168,7 @@ input[type="file"]:hover {
   display: block;
   width: 90%;
   padding: 10px;
-  margin: 10px 0;
+  margin: 5px 0;
   text-align: center;
   background-color: #5bc0de;
   color: white;
@@ -135,7 +185,7 @@ input[type="file"]:hover {
 #zoom-controls {
   position: fixed;
   bottom: 20px;
-  right: 20px;
+  right: 330px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -232,8 +282,48 @@ input[type="file"]:hover {
   </style>
 </head>
 <body>
+  <!--Menu option à droite-->
   <div id="controls">
-    <h3>Nombre de tables</h3>
+
+
+    <h3>Invités : <span id="guestCount">0</span></h3>
+  
+    <!-- Input CSV -->
+    <div>
+      <label for="csvFileInput" class="file-label">Importer invités (.csv)</label>
+      <input type="file" id="csvFileInput" accept=".csv" hidden style="display: none;">
+    </div>
+  
+    <button onclick="openGuestModal()" style="background-color: #5bc0de;">➕ Ajouter un invité</button>
+
+
+
+
+  
+    <!--filtre-->
+    <input type="text" id="guestFilterInput" placeholder="Rechercher un invité..." style="width: 93%; padding: 5px; margin-bottom: 10px;" oninput="filterGuests()">
+    <!-- Zone invités -->
+    <div id="guests" ondragover="event.preventDefault()" ondrop="dropGuest(event, this)">
+    </div>
+  </div>
+  <!--Salle-->
+  <div class="main-content">
+    <div id="room"></div>
+  </div>
+    <!--Menu invité gauche-->
+  <div class="right-sidebar">
+          <!-- Input JSON -->
+          <div>
+            <label for="loadConfig" class="file-label">Charger configuration (.json)</label>
+            <input type="file" id="loadConfig" accept=".json" hidden style="display: none;">
+          </div>
+        
+          <!-- Boutons -->
+          <div>
+            <button onclick="saveConfiguration()">💾 Sauvegarder la disposition</button>
+            <button onclick="resetConfiguration()">🔄 Réinitialiser la salle</button>
+          </div>
+    <h3>Tables</h3>
   
     <p>
       <label for="rectTableCount">Table rectangulaire:</label><br>
@@ -246,39 +336,10 @@ input[type="file"]:hover {
       <input type="number" id="tableCount" min="1" max="20" value="1">
       <button onclick="generateTables()">Ajouter tables</button>
     </p>
-  
-    <h3>Invités</h3>
-    <h3>Nombre : <span id="guestCount">0</span></h3>
-  
-    <!-- Input CSV -->
-    <div>
-      <label for="csvFileInput" class="file-label">Importer invités (.csv)</label>
-      <input type="file" id="csvFileInput" accept=".csv" hidden style="display: none;">
-    </div>
-  
-    <button onclick="openGuestModal()" style="background-color: #5bc0de;">➕ Ajouter un invité</button>
-
-
-
-    <!-- Input JSON -->
-    <div>
-      <label for="loadConfig" class="file-label">Charger configuration (.json)</label>
-      <input type="file" id="loadConfig" accept=".json" hidden style="display: none;">
-    </div>
-  
-    <!-- Boutons -->
-    <div>
-      <button onclick="saveConfiguration()">💾 Sauvegarder la disposition</button>
-      <button onclick="resetConfiguration()">🔄 Réinitialiser la salle</button>
-    </div>
-  
-    <!-- Zone invités -->
-    <div id="guests" ondragover="event.preventDefault()" ondrop="dropGuest(event, this)">
-      <h3>Liste</h3>
-    </div>
   </div>
   
-  <div id="room"></div>
+
+
 
   <script>
     let draggedGuest = null;
@@ -725,6 +786,22 @@ window.addEventListener("click", function(event) {
   }
 });
 
+
+</script>
+<script>
+  function filterGuests() {
+  const filterValue = document.getElementById("guestFilterInput").value.toLowerCase();
+  const guests = document.querySelectorAll("#guests .guest");
+
+  guests.forEach(guest => {
+    const name = guest.textContent.toLowerCase();
+    if (name.includes(filterValue)) {
+      guest.style.display = "block";
+    } else {
+      guest.style.display = "none";
+    }
+  });
+}
 
 </script>
 <!--Zoom-->

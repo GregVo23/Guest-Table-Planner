@@ -82,7 +82,7 @@ body {
     .guest {
       padding: 5px;
       margin: 5px;
-      background: #eaeaea;
+      background: #ffc7c7;
       cursor: grab;
       text-align: center;
       border-radius: 5px;
@@ -504,11 +504,31 @@ function saveTableName() {
     let tableCounter = 1;
 
     function createTable(x, y, seatCount = 8) {
+
+      
   let table = document.createElement("div");
   table.classList.add("table");
   table.dataset.seatCount = seatCount; // sauvegarde pour la conf
   table.style.left = `${x}px`;
   table.style.top = `${y}px`;
+
+  let deleteButton = document.createElement("button");
+deleteButton.textContent = "🗑️";
+deleteButton.style.position = "absolute";
+deleteButton.style.top = "0px";
+deleteButton.style.right = "-10px";
+deleteButton.style.background = "transparent";
+deleteButton.style.border = "none";
+deleteButton.style.color = "white";
+deleteButton.style.borderRadius = "50%";
+deleteButton.style.width = "24px";
+deleteButton.style.height = "24px";
+deleteButton.style.cursor = "pointer";
+deleteButton.title = "Supprimer cette table";
+
+deleteButton.onclick = () => deleteTable(table);
+table.appendChild(deleteButton);
+
 
   table.onmousedown = function (e) {
     if (e.target.classList.contains("guest")) return;
@@ -555,6 +575,24 @@ function saveTableName() {
       table.style.position = "absolute";
       table.style.left = `${x}px`;
       table.style.top = `${y}px`;
+
+      let deleteButton = document.createElement("button");
+deleteButton.textContent = "🗑️";
+deleteButton.style.position = "absolute";
+deleteButton.style.top = "-30px";
+deleteButton.style.right = "-10px";
+deleteButton.style.background = "transparent";
+deleteButton.style.border = "none";
+deleteButton.style.color = "white";
+deleteButton.style.borderRadius = "50%";
+deleteButton.style.width = "24px";
+deleteButton.style.height = "24px";
+deleteButton.style.cursor = "pointer";
+deleteButton.title = "Supprimer cette table";
+
+deleteButton.onclick = () => deleteTable(table);
+table.appendChild(deleteButton);
+
 
       table.onmousedown = function (e) {
         if (e.target.classList.contains("guest")) return;
@@ -605,6 +643,23 @@ function saveTableName() {
 
       return table;
     }
+
+    function deleteTable(table) {
+  // Remet les invités assis à cette table dans la liste d'invités
+  const guestsContainer = document.getElementById("guests");
+
+  table.querySelectorAll(".seat").forEach(seat => {
+    if (seat.firstChild && seat.firstChild.classList.contains("guest")) {
+      guestsContainer.appendChild(seat.firstChild);
+    }
+  });
+
+  // Supprimer la table de la salle
+  table.remove();
+
+  // Mettre à jour le compteur d'invités
+  updateGuestCount();
+}
 
 </script>
   <script>

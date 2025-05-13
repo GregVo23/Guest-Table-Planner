@@ -479,28 +479,26 @@ function saveTableName() {
     }
 
     function generateRectTables() {
-        let existingRect = document.querySelectorAll(".table.rect").length;
-        let newCount = parseInt(document.getElementById("rectTableCount").value);
-        let toAdd = newCount - existingRect;
-        if (toAdd <= 0) return;
+  let tableCountToAdd = parseInt(document.getElementById("rectTableCount").value);
+  let existingRectTables = document.querySelectorAll(".table.rect").length;
 
-        for (let i = existingRect; i < newCount; i++) {
-            createRectTable(100 + i * 230, 400); // Décalé verticalement
-        }
-    }
+  for (let i = 0; i < tableCountToAdd; i++) {
+    createRectTable(100 + (existingRectTables + i) * 230, 400);
+  }
+}
+
 
 
     function generateTables() {
-      let existingRoundTables = document.querySelectorAll(".table:not(.rect)").length;
-  let newTableCount = parseInt(document.getElementById("tableCount").value);
+  let tableCountToAdd = parseInt(document.getElementById("tableCount").value);
   let seatCount = parseInt(document.getElementById("seatCount").value);
-  let tablesToAdd = newTableCount - existingRoundTables;
-  if (tablesToAdd <= 0) return;
+  let existingRoundTables = document.querySelectorAll(".table:not(.rect)").length;
 
-  for (let i = existingRoundTables; i < newTableCount; i++) {
-    createTable(100 + i * 210, 160, seatCount);
+  for (let i = 0; i < tableCountToAdd; i++) {
+    createTable(100 + (existingRoundTables + i) * 210, 160, seatCount);
   }
 }
+
 
     // Ajout dans les fonctions createTable et createRectTable
     let tableCounter = 1;

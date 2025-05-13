@@ -341,6 +341,13 @@ input[type="file"]:hover {
       <p>
         <label for="tableCount">Table ronde:</label><br>
         <input type="number" id="tableCount" min="1" max="20" value="1">
+        <select id="seatCount">
+          <option value="6">6 places</option>
+          <option value="7">7 places</option>
+          <option value="8" selected>8 places</option>
+          <option value="9">9 places</option>
+          <option value="10">10 places</option>
+        </select>
         <button onclick="generateTables()">Ajouter tables</button>
       </p>
 
@@ -484,58 +491,61 @@ function saveTableName() {
 
 
     function generateTables() {
-  let existingRoundTables = document.querySelectorAll(".table:not(.rect)").length;
+      let existingRoundTables = document.querySelectorAll(".table:not(.rect)").length;
   let newTableCount = parseInt(document.getElementById("tableCount").value);
+  let seatCount = parseInt(document.getElementById("seatCount").value);
   let tablesToAdd = newTableCount - existingRoundTables;
   if (tablesToAdd <= 0) return;
 
   for (let i = existingRoundTables; i < newTableCount; i++) {
-    createTable(100 + i * 210, 160);
+    createTable(100 + i * 210, 160, seatCount);
   }
 }
 
     // Ajout dans les fonctions createTable et createRectTable
     let tableCounter = 1;
 
-function createTable(x, y) {
-      let table = document.createElement("div");
-      table.classList.add("table");
-      table.style.left = `${x}px`;
-      table.style.top = `${y}px`;
+    function createTable(x, y, seatCount = 8) {
+  let table = document.createElement("div");
+  table.classList.add("table");
+  table.dataset.seatCount = seatCount; // sauvegarde pour la conf
+  table.style.left = `${x}px`;
+  table.style.top = `${y}px`;
 
-      table.onmousedown = function (e) {
-        if (e.target.classList.contains("guest")) return;
-        let draggedTable = table;
-        offsetX = e.clientX - table.offsetLeft;
-        offsetY = e.clientY - table.offsetTop;
-        document.onmousemove = function (e) {
-          if (!draggedTable) return;
-          draggedTable.style.left = `${e.clientX - offsetX}px`;
-          draggedTable.style.top = `${e.clientY - offsetY}px`;
-        };
-        document.onmouseup = function () {
-          draggedTable = null;
-          document.onmousemove = null;
-        };
-      };
+  table.onmousedown = function (e) {
+    if (e.target.classList.contains("guest")) return;
+    let draggedTable = table;
+    offsetX = e.clientX - table.offsetLeft;
+    offsetY = e.clientY - table.offsetTop;
+    document.onmousemove = function (e) {
+      if (!draggedTable) return;
+      draggedTable.style.left = `${e.clientX - offsetX}px`;
+      draggedTable.style.top = `${e.clientY - offsetY}px`;
+    };
+    document.onmouseup = function () {
+      draggedTable = null;
+      document.onmousemove = null;
+    };
+  };
 
-      document.getElementById("room").appendChild(table);
+  document.getElementById("room").appendChild(table);
 
-      for (let i = 0; i < 8; i++) {
-        let seat = document.createElement("div");
-        seat.classList.add("seat");
-        let angle = (i * 2 * Math.PI) / 8;
-        seat.style.left = `${60 + 75 * Math.cos(angle)}px`;
-        seat.style.top = `${60 + 75 * Math.sin(angle)}px`;
-        seat.ondragover = (e) => e.preventDefault();
-        seat.ondrop = (e) => dropGuest(e, seat);
-        table.appendChild(seat);
-      }
+  for (let i = 0; i < seatCount; i++) {
+    let seat = document.createElement("div");
+    seat.classList.add("seat");
+    let angle = (i * 2 * Math.PI) / seatCount;
+    seat.style.left = `${60 + 75 * Math.cos(angle)}px`;
+    seat.style.top = `${60 + 75 * Math.sin(angle)}px`;
+    seat.ondragover = (e) => e.preventDefault();
+    seat.ondrop = (e) => dropGuest(e, seat);
+    table.appendChild(seat);
+  }
 
-      createLabelForTable(table, `Table ${tableCounter++}`);
+  createLabelForTable(table, `Table ${tableCounter++}`);
 
-      return table;
-    }
+  return table;
+}
+
 
     function createRectTable(x, y) {
       let table = document.createElement("div");
@@ -600,45 +610,51 @@ function createTable(x, y) {
 
 </script>
   <script>
-    function saveConfiguration() {
-      let tables = document.querySelectorAll(".table");
-      let guests = document.querySelectorAll("#guests .guest");
+function saveConfiguration() {
+  let tables = document.querySelectorAll(".table");
+  let guests = document.querySelectorAll("#guests .guest");
 
-      let data = {
-        tables: [],
-        guests: [],
-      };
+  let data = {
+    tables: [],
+    guests: [],
+  };
 
-      tables.forEach((table) => {
-        let tableData = {
-          x: table.style.left,
-          y: table.style.top,
-          type: table.classList.contains("rect") ? "rect" : "round",
-          label: table.querySelector(".table-label")?.textContent || "",
-          seats: []
-        };
+  tables.forEach((table) => {
+    let tableData = {
+      x: table.style.left,
+      y: table.style.top,
+      type: table.classList.contains("rect") ? "rect" : "round",
+      label: table.querySelector(".table-label")?.textContent || "",
+      seatCount: table.dataset.seatCount ? parseInt(table.dataset.seatCount) : 8,
+      seats: []
+    };
 
-        table.querySelectorAll(".seat").forEach((seat, seatIndex) => {
-          if (seat.firstChild) {
-            tableData.seats.push({
-              seatIndex: seatIndex,
-              guest: seat.firstChild.textContent
-            });
-          }
+    table.querySelectorAll(".seat").forEach((seat, seatIndex) => {
+      if (seat.firstChild) {
+        tableData.seats.push({
+          seatIndex: seatIndex,
+          guest: seat.firstChild.textContent
         });
+      }
+    });
 
-        data.tables.push(tableData);
-      });
+    data.tables.push(tableData);
+  });
 
-      guests.forEach(guest => data.guests.push(guest.textContent));
+  guests.forEach(guest => data.guests.push(guest.textContent));
 
-      let jsonData = JSON.stringify(data, null, 2);
-      let blob = new Blob([jsonData], { type: "application/json" });
-      let link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "configuration.json";
-      link.click();
-    }
+  let jsonData = JSON.stringify(data, null, 2);
+
+  // Création et déclenchement du téléchargement
+  let blob = new Blob([jsonData], { type: "application/json" });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement("a");
+  a.href = url;
+  a.download = "configuration.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 
   
     document.getElementById('loadConfig').addEventListener('change', function (event) {
@@ -654,33 +670,52 @@ function createTable(x, y) {
     });
   
     function loadConfiguration(data) {
-      document.getElementById("room").innerHTML = "";
+  document.getElementById("room").innerHTML = "";
 
-      data.tables.forEach(tableData => {
-        let table = (tableData.type === "rect")
-          ? createRectTable(parseInt(tableData.x), parseInt(tableData.y))
-          : createTable(parseInt(tableData.x), parseInt(tableData.y));
-
-        const label = table.querySelector(".table-label");
-        if (label && tableData.label) label.textContent = tableData.label;
-
-        tableData.seats.forEach(seatData => {
-          let seat = table.querySelectorAll(".seat")[seatData.seatIndex];
-          if (seat) {
-            let guestDiv = document.createElement("div");
-            guestDiv.classList.add("guest");
-            guestDiv.textContent = seatData.guest;
-            guestDiv.draggable = true;
-            guestDiv.ondragstart = (e) => {
-              draggedGuest = guestDiv;
-              e.stopPropagation();
-            };
-            guestDiv.ondragend = () => draggedGuest = null;
-            seat.appendChild(guestDiv);
-          }
-        });
-      });
+  data.tables.forEach(tableData => {
+    let table;
+    if (tableData.type === "rect") {
+      table = createRectTable(parseInt(tableData.x), parseInt(tableData.y));
+    } else {
+      table = createTable(parseInt(tableData.x), parseInt(tableData.y), tableData.seatCount || 8);
     }
+
+    // Nom de la table
+    let label = table.querySelector(".table-label");
+    if (label && tableData.label) {
+      label.textContent = tableData.label;
+    }
+
+    // Placer les invités
+    tableData.seats.forEach(seatInfo => {
+      let seat = table.querySelectorAll(".seat")[seatInfo.seatIndex];
+      if (seat && !seat.firstChild) {
+        let guestDiv = document.createElement("div");
+        guestDiv.classList.add("guest");
+        guestDiv.textContent = seatInfo.guest;
+        guestDiv.draggable = true;
+        guestDiv.ondragstart = (e) => { draggedGuest = guestDiv; e.stopPropagation(); };
+        guestDiv.ondragend = () => { draggedGuest = null; };
+        seat.appendChild(guestDiv);
+      }
+    });
+  });
+
+  // Invités non placés
+  document.getElementById("guests").innerHTML = "";
+  data.guests.forEach(name => {
+    let guestDiv = document.createElement("div");
+    guestDiv.classList.add("guest");
+    guestDiv.textContent = name;
+    guestDiv.draggable = true;
+    guestDiv.ondragstart = (e) => { draggedGuest = guestDiv; e.stopPropagation(); };
+    guestDiv.ondragend = () => { draggedGuest = null; };
+    document.getElementById("guests").appendChild(guestDiv);
+  });
+
+  updateGuestCount();
+}
+
 
 
 </script>

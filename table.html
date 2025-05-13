@@ -258,6 +258,15 @@ input[type="file"]:hover {
   margin-bottom: 15px;
 }
 
+.modal-content button {
+  background-color: #0275d8; /* Couleur par défaut (bleu clair) */
+}
+
+.modal-content button:hover {
+  background-color: #025aa5; /* Couleur plus foncée au survol */
+}
+
+
 .close {
   position: absolute;
   right: 10px;
@@ -410,9 +419,12 @@ function createLabelForTable(table, defaultName) {
 
 function openTableNameModal(labelElement) {
   currentTableBeingNamed = labelElement;
-  document.getElementById("tableNameInput").value = labelElement.textContent;
+  const input = document.getElementById("tableNameInput");
+  input.value = labelElement.textContent;
   document.getElementById("tableNameModal").style.display = "flex";
+  setTimeout(() => input.focus(), 50); // Donne le focus après l'ouverture de la modale
 }
+
 
 function closeTableNameModal() {
   document.getElementById("tableNameModal").style.display = "none";

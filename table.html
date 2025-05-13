@@ -293,6 +293,7 @@ input[type="file"]:hover {
       text-align: center;
       cursor: pointer;
     }
+    
 
 
   </style>
@@ -379,6 +380,16 @@ input[type="file"]:hover {
       <button onclick="saveTableName()">Enregistrer</button>
     </div>
   </div>
+
+  <!-- Modale de confirmation de suppression -->
+<div id="confirmDeleteModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeDeleteModal()">&times;</span>
+    <p>Êtes-vous sûr de vouloir supprimer cette table ?</p>
+    <button onclick="confirmDelete()" style="background-color: #d9534f;">Oui, supprimer</button>
+    <button onclick="closeDeleteModal()" style="background-color: #5bc0de; margin-top: 10px;">Annuler</button>
+  </div>
+</div>
 
 
   <script>
@@ -526,7 +537,7 @@ deleteButton.style.height = "24px";
 deleteButton.style.cursor = "pointer";
 deleteButton.title = "Supprimer cette table";
 
-deleteButton.onclick = () => deleteTable(table);
+deleteButton.onclick = () => openDeleteModal(table);
 table.appendChild(deleteButton);
 
 
@@ -590,7 +601,7 @@ deleteButton.style.height = "24px";
 deleteButton.style.cursor = "pointer";
 deleteButton.title = "Supprimer cette table";
 
-deleteButton.onclick = () => deleteTable(table);
+deleteButton.onclick = () => openDeleteModal(table);
 table.appendChild(deleteButton);
 
 
@@ -897,6 +908,35 @@ window.addEventListener("click", function(event) {
       guest.style.display = "none";
     }
   });
+}
+
+</script>
+<script>
+  let tableToDelete = null;
+
+function openDeleteModal(table) {
+  tableToDelete = table;
+  document.getElementById("confirmDeleteModal").style.display = "flex";
+}
+
+function closeDeleteModal() {
+  tableToDelete = null;
+  document.getElementById("confirmDeleteModal").style.display = "none";
+}
+
+function confirmDelete() {
+  if (tableToDelete) {
+    const guestsContainer = document.getElementById("guests");
+
+    tableToDelete.querySelectorAll(".seat").forEach(seat => {
+      if (seat.firstChild && seat.firstChild.classList.contains("guest")) {
+        guestsContainer.appendChild(seat.firstChild);
+      }
+    });
+
+    tableToDelete.remove();
+  }
+  closeDeleteModal();
 }
 
 </script>
